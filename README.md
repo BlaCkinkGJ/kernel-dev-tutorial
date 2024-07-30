@@ -6,4 +6,4 @@
 
 - 가상 머신: VirtualBox
 - 배포판: Ubuntu 22.04.4 LTS
-- 커널 버전: 5.15.0-113-generic
+- 커널 버전: 5.15
