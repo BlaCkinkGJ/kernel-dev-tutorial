@@ -24,5 +24,4 @@ tags: cscope
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(shell pwd) clean
-	rm -rf cscope.* tags
 
