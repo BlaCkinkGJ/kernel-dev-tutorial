@@ -11,7 +11,7 @@ sudo apt update -y
 sudo apt install -y clang-format
 ```
 
-## HelloWorld
+## HelloWorld 드라이버의 생성
 
 먼저 Makefile은 다음과 같이 작성을 해주시면 됩니다.
 
@@ -345,13 +345,132 @@ sudo insmod ramdisk.ko
 sudo dmesg
 ```
 
-> 들어가야 할 내용
->
-> 1. 어떻게 Ramdisk 디바이스 드라이버를 만들지
-> 2. 파일 시스템 실제 적용
-> 3. 사용자 프로그램의 생성
+## EXT4 파일 시스템 설치
+
+모듈 적재를 완료하면 `/dev` 디렉터리에 `ramdisk`가 생긴 것을 알 수 있습니다.
+
+해당 디바이스 파일이 우리가 만든 디바이스 드라이버를 사용하는 블록 장치를 나타냅니다.
+
+그러면 해당 블록 장치에 EXT4를 적용을 해보도록 하겠습니다.
+
+```bash
+sudo mkfs.ext4 /dev/ramdisk
+sudo mkdir -p /mnt/ramdisk
+sudo mount /dev/ramdisk /mnt/ramdisk
+```
+
+`df -hl` 명령어를 사용하면 정상적으로 마운트가 되었음을 확인할 수 있습니다.
+
+이후에 다음 명령어를 통해 fio를 설치해주도록 합니다.
+
+```bash
+sudo apt update -y
+sudo apt install -y fio
+```
+
+그리고 fio를 실행을 해주도록 합니다.
+
+```bash
+sudo fio --name=randomwrite \
+    --ioengine=libaio \
+    --iodepth=16 \
+    --rw=randwrite \
+    --size=30M \
+    --verify=crc32 \
+    --filename=/mnt/ramdisk/randwritedata
+```
+
+만약 동작이 정상적으로 끝난다면 ramdisk가 성공적으로 잘 작동하는 것을 알 수 있습니다.
+그리고 `df -hl`을 실행하면 디스크 용량이 가득찼음을 확인할 수 있습니다.
+
+## ftrace 사용법
+
+`printk()`를 통한 탐치 방법은 일반적으로 권고하지 않습니다.
+특히, 과도한 dmesg 발생은 시스템에 부정적인 영향을 줄 수 있습니다.
+
+이를 대체하기 위해서 `printk()`가 아니라 ftrace를 사용하는 것을 권장합니다.
+ftrace의 경우에는 슈퍼 유저 권한으로 진행되어야 하기 때문에 슈퍼 유저로 이동하도록 합니다.
+
+```bash
+sudo -s
+```
+
+먼저, 사용가능한 트레이스 툴이 어떤 것이 있는지를 확인합니다.
+
+```bash
+cat /sys/kernel/tracing/available_tracers
+echo 0 > /sys/kernel/tracing/tracing_on # trace 기록을 중지
+```
+이 중에서 `function_graph`를 사용해보도록 하겠습니다.
+
+```bash
+echo function_graph > /sys/kernel/tracing/current_tracer
+cat /sys/kernel/tracing/current_tracer # function_graph
+```
+
+저희는 ramdisk 함수랑 blk 함수를 추적을 해보도록 하겠습니다.
+
+```bash
+echo ramdisk* > /sys/kernel/tracing/set_ftrace_filter
+cat set_ftrace_filter # ramdisk_queue_rq가 보입니다.
+echo blk* >> /sys/kernel/tracing/set_ftrace_filter
+cat set_ftrace_filter # blk_로 시작하는 커널 함수가 추가됩니다.
+```
+
+이후에 트레이싱을 활성화해주도록 합니다.
+
+```bash
+echo 1 > /sys/kernel/tracing/tracing_on
+echo "data" > /mnt/ramdisk/data
+cat /sys/kernel/tracing/trace | grep -A 5 -B 5 ramdisk # ramdisk 함수 위 아래 5줄 출력
+```
+
+그러면 이와 같은 결과가 나오는 것을 확인할 수 있습니다.
+
+```
+ 0)               |      blk_mq_do_dispatch_sched() {
+ 0)   0.290 us    |        blk_req_needs_zone_write_lock();
+ 0)   0.251 us    |        blk_mq_get_driver_tag();
+ 0)               |        blk_mq_dispatch_rq_list() {
+ 0)   0.240 us    |          blk_mq_get_driver_tag();
+ 0)               |          ramdisk_queue_rq [ramdisk]() {
+ 0)               |            blk_mq_start_request() {
+ 0)   0.241 us    |              blk_add_timer();
+ 0)   0.781 us    |            }
+ 0)               |            blk_mq_end_request() {
+ 0)   0.441 us    |              blk_update_request();
+```
+
+이를 통해서 어떤 호출이 발생하는지 알 수 있습니다.
+모든 것이 완료되면 트레이스를 비활성화를 시켜주도록 합니다.
+
+```bash
+echo 0 > /sys/kernel/tracing/tracing_on
+echo nop > /sys/kernel/tracing/current_tracer
+echo "" > /sys/kernel/tracing/set_ftrace_filter # 모든 함수 트레이싱 활성화
+```
+
+그리고 `printk()` 대신에 `trace_printk()`를 사용하면 트레이스 파일에서 출력된 값을 볼 수 있습니다.
+`printk()`에 비해 부하도 적으면서 안정적인 출력 상태를 확인할 수 있습니다.
+
+참고로 트레이싱이기 때문에 샘플링이 되어서 결과가 노출됩니다. 따라서, 데이터가 보이지 않는 등의 문제가 발생할 수 있습니다.
+
+## eBPF 사용법
+
+
 > 4. printk 및 ftrace 사용법
 > 5. eBPF를 통한 탐치
+
+## 모든 작업이 끝나면
+
+실행이 완료되었으면 마운트를 해제하고 모듈을 제거하도록 합시다.
+
+```bash
+sudo umount /mnt/ramdisk
+sudo rmmod ramdisk
+```
+
+이 모든 과정에 문제가 없는지 확인하기 위해서 `sudo dmesg`를 수행해보면 됩니다.
 
 ## 참고 자료
 
@@ -361,3 +480,6 @@ sudo dmesg
 - https://chemnitzer.linux-tage.de/2021/media/programm/folien/165.pdf
 - https://docs.kernel.org/block/blk-mq.html
 - https://liujunming.top/2019/01/03/Understanding-the-Linux-Kernel-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0-Block-Device-Drivers/
+- https://www.kernel.org/doc/html/v5.0/trace/ftrace.html
+- https://lwn.net/Articles/322666/
+- https://lwn.net/Articles/370423/
