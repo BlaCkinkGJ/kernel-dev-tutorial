@@ -455,12 +455,6 @@ echo "" > /sys/kernel/tracing/set_ftrace_filter # 모든 함수 트레이싱 활
 
 참고로 트레이싱이기 때문에 샘플링이 되어서 결과가 노출됩니다. 따라서, 데이터가 보이지 않는 등의 문제가 발생할 수 있습니다.
 
-## eBPF 사용법
-
-
-> 4. printk 및 ftrace 사용법
-> 5. eBPF를 통한 탐치
-
 ## 모든 작업이 끝나면
 
 실행이 완료되었으면 마운트를 해제하고 모듈을 제거하도록 합시다.
@@ -472,7 +466,13 @@ sudo rmmod ramdisk
 
 이 모든 과정에 문제가 없는지 확인하기 위해서 `sudo dmesg`를 수행해보면 됩니다.
 
-## 참고 자료
+## 추가
+
+ftrace 말고도, eBPF 및 Perf와 같은 툴들도 있으니 참고하시면 좋을 것 같습니다. ([링크](https://www.brendangregg.com/blog/2016-12-27/linux-tracing-in-15-minutes.html))
+
+그리고 바로 실행할 수 있는 소스 코드는 `/chapter2/ramdisk`에 존재하니 해당 디렉터리 확인 부탁드립니다.
+
+## 참고 링크
 
 - https://blog.pankajraghav.com/2022/11/30/BLKRAM.html
 - https://github.com/Panky-codes/blkram
