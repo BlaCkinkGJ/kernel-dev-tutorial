@@ -57,8 +57,8 @@ static void __exit ramdisk_exit(void)
     printk(KERN_INFO "bye bye!!\n");
 }
 
-module_init(blk_ram_init);
-module_exit(blk_ram_exit);
+module_init(ramdisk_init);
+module_exit(ramdisk_exit);
 
 MODULE_AUTHOR("BlaCkinkGJ");
 MODULE_LICENSE("GPL");
