@@ -74,9 +74,3 @@ sudo fio --name=randomwrite \
 ## 참고 자료
 
 - https://www.cnx-software.com/2019/08/14/bfq-budget-fair-queuing-i-o-scheduler-improves-linux-systems-responsiveness-video/
-
-> 들어가야 할 내용
->
-> 1. cgroup weight 부여 방법
-> 2. BFQ 설정 방법
-> 3. weight에 따른 벤치마크
