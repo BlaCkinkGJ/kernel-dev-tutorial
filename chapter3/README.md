@@ -15,7 +15,7 @@ sudo -s
 cat /sys/block/sda/queue/scheduler
 ```
 
-만약에 `bfq-ioosched`랑 `kyber`가 없다면 다음 명령어를 통해서 추가해주도록 합니다.
+만약에 `bfq-iosched`랑 `kyber`가 없다면 다음 명령어를 통해서 추가해주도록 합니다.
 
 ```bash
 modprobe bfq-iosched
