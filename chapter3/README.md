@@ -41,7 +41,7 @@ echo "100" > /sys/fs/cgroup/blkio/fio1/blkio.bfq.weight
 
 > 만약에 blkio.bfq.weight가 없는 경우에는 `/etc/default/grub` 파일을 열어서
 > `GRUB_CMDLINE_LINX` 항목에 `cgroup_enable=memory systemd.unified_cgroup_hierarchy=0`를 추가해주시면 됩니다.
-> 그리고 완료되면 `sudo update-grub`을 진행해주시면 됩니다.
+> 그리고 완료되면 `sudo update-grub`을 진행해주시면 됩니다. 그 후에 reboot을 수행해주시면 blkio.bfq.weight 항목이 생기는 것을 확인할 수 있습니다.
 
 2개의 서로 다른 bash 창을 열어주셔야 합니다. 저는 tmux를 사용했습니다. ([참고](https://hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/))
 
