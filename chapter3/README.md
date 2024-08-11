@@ -35,8 +35,8 @@ cat /sys/block/sda/queue/scheduler # bfq
 ```bash
 mkdir /sys/fs/cgroup/blkio/fio1
 mkdir /sys/fs/cgroup/blkio/fio2
-echo 50 > /sys/fs/cgroup/blkio/fio1/io.bfq.weight
-echo 100 > /sys/fs/cgroup/blkio/fio2/io.bfq.weight
+echo "50" > /sys/fs/cgroup/blkio/fio1/blkio.bfq.weight
+echo "100" > /sys/fs/cgroup/blkio/fio1/blkio.bfq.weight
 ```
 
 2개의 서로 다른 bash 창을 열어주셔야 합니다. 저는 tmux를 사용했습니다. ([참고](https://hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/))
